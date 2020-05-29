@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /**
  * @file Panel v2.
  * @copyright IBM Security 2019
@@ -33,6 +34,12 @@ const getInstanceId = setupGetInstanceId();
  * @returns {PanelV2} Panel v2 container instance.
  */
 export default class PanelV2 extends Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+
   state = { bodyMargin: 0, isOpen: this.props.isOpen };
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -46,12 +53,19 @@ export default class PanelV2 extends Component {
     if (isClient() && this.state.isOpen) {
       this.setBodyMargin();
     }
+    document.addEventListener('mousedown', this.handleClick);
+    document.addEventListener('keydown', this.handleKeyDown);
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.isOpen && !prevState.isOpen && isClient()) {
       this.setBodyMargin();
     }
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this.handleClick);
+    document.addEventListener('keydown', this.handleKeyDown);
   }
 
   /**
@@ -75,6 +89,19 @@ export default class PanelV2 extends Component {
 
   footer = createRef();
   header = createRef();
+  wrapper = createRef();
+
+  handleClick(event) {
+    if (this.wrapper.current && !this.wrapper.current.contains(event.target)) {
+      this.props.closeButton.onClick();
+    }
+  }
+
+  handleKeyDown(event) {
+    if (event.keyCode === 27) {
+      this.props.closeButton.onClick();
+    }
+  }
 
   renderPanel = ({
     labels: {
@@ -122,6 +149,7 @@ export default class PanelV2 extends Component {
         {this.state.isOpen && (
           <Portal
             focusTrap={focusTrap}
+            hasOverlay={false}
             stopPropagation={stopPropagation}
             stopPropagationEvents={stopPropagationEvents}
           >
@@ -131,90 +159,92 @@ export default class PanelV2 extends Component {
               aria-label={ariaLabel}
               aria-modal="true"
             >
-              <header ref={this.header} className={`${namespace}__header`}>
-                <IconButton
-                  id={closeButton.id}
-                  className={`${namespace}__button--close`}
-                  label={PANEL_CONTAINER_CLOSE_BUTTON}
-                  onClick={closeButton.onClick}
-                  renderIcon={closeButton.icon || Close20}
-                  tooltip={false}
-                />
-                {title && (
-                  <div className={`${namespace}__header__container--title`}>
-                    {typeof title === 'string' ? (
-                      <h2
-                        id={this.panelTitleId}
-                        className={`${namespace}__header--title`}
-                      >
-                        {title}
-                      </h2>
-                    ) : (
-                      <div
-                        id={this.panelTitleId}
-                        className={`${namespace}__header--title`}
-                      >
-                        {title}
-                      </div>
-                    )}
-                    {subtitle && (
-                      <div
-                        id={this.panelSubtitleId}
-                        className={`${namespace}__header--subtitle`}
-                      >
-                        {subtitle}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </header>
-              <section
-                className={classnames(`${namespace}__body`, {
-                  [`${namespace}__body--footer`]: renderFooter,
-                })}
-                style={{
-                  marginTop: `${this.state.bodyMargin.top}px`,
-                  marginBottom: `${this.state.bodyMargin.bottom}px`,
-                }}
-                {...hasScrollingContentProps}
-                {...getAriaLabelledBy}
-              >
-                {children}
-              </section>
-
-              {hasFooter && (
-                <footer ref={this.footer} className={`${namespace}__footer`}>
-                  {renderFooter ? (
-                    renderFooter()
-                  ) : (
-                    <Fragment>
-                      {secondaryButton && (
-                        <Button
-                          id={secondaryButton.id}
-                          className={`${namespace}__footer__button ${namespace}__footer__button--secondary`}
-                          disabled={secondaryButton.isDisabled}
-                          iconDescription={secondaryButton.iconDescription}
-                          kind="secondary"
-                          onClick={secondaryButton.onClick}
-                          renderIcon={secondaryButton.icon}
+              <section ref={this.wrapper} className={`${namespace}__wrapper`}>
+                <header ref={this.header} className={`${namespace}__header`}>
+                  <IconButton
+                    id={closeButton.id}
+                    className={`${namespace}__button--close`}
+                    label={PANEL_CONTAINER_CLOSE_BUTTON}
+                    onClick={closeButton.onClick}
+                    renderIcon={closeButton.icon || Close20}
+                    tooltip={false}
+                  />
+                  {title && (
+                    <div className={`${namespace}__header__container--title`}>
+                      {typeof title === 'string' ? (
+                        <h2
+                          id={this.panelTitleId}
+                          className={`${namespace}__header--title`}
                         >
-                          {PANEL_CONTAINER_SECONDARY_BUTTON}
-                        </Button>
+                          {title}
+                        </h2>
+                      ) : (
+                        <div
+                          id={this.panelTitleId}
+                          className={`${namespace}__header--title`}
+                        >
+                          {title}
+                        </div>
                       )}
-                      <Button
-                        id={primaryButton.id}
-                        className={`${namespace}__footer__button`}
-                        disabled={primaryButton.isDisabled}
-                        iconDescription={primaryButton.iconDescription}
-                        onClick={primaryButton.onClick}
-                        renderIcon={primaryButton.icon}
-                      >
-                        {PANEL_CONTAINER_PRIMARY_BUTTON}
-                      </Button>
-                    </Fragment>
+                      {subtitle && (
+                        <div
+                          id={this.panelSubtitleId}
+                          className={`${namespace}__header--subtitle`}
+                        >
+                          {subtitle}
+                        </div>
+                      )}
+                    </div>
                   )}
-                </footer>
-              )}
+                </header>
+                <section
+                  className={classnames(`${namespace}__body`, {
+                    [`${namespace}__body--footer`]: renderFooter,
+                  })}
+                  style={{
+                    marginTop: `${this.state.bodyMargin.top}px`,
+                    marginBottom: `${this.state.bodyMargin.bottom}px`,
+                  }}
+                  {...hasScrollingContentProps}
+                  {...getAriaLabelledBy}
+                >
+                  {children}
+                </section>
+
+                {hasFooter && (
+                  <footer ref={this.footer} className={`${namespace}__footer`}>
+                    {renderFooter ? (
+                      renderFooter()
+                    ) : (
+                      <Fragment>
+                        {secondaryButton && (
+                          <Button
+                            id={secondaryButton.id}
+                            className={`${namespace}__footer__button ${namespace}__footer__button--secondary`}
+                            disabled={secondaryButton.isDisabled}
+                            iconDescription={secondaryButton.iconDescription}
+                            kind="secondary"
+                            onClick={secondaryButton.onClick}
+                            renderIcon={secondaryButton.icon}
+                          >
+                            {PANEL_CONTAINER_SECONDARY_BUTTON}
+                          </Button>
+                        )}
+                        <Button
+                          id={primaryButton.id}
+                          className={`${namespace}__footer__button`}
+                          disabled={primaryButton.isDisabled}
+                          iconDescription={primaryButton.iconDescription}
+                          onClick={primaryButton.onClick}
+                          renderIcon={primaryButton.icon}
+                        >
+                          {PANEL_CONTAINER_PRIMARY_BUTTON}
+                        </Button>
+                      </Fragment>
+                    )}
+                  </footer>
+                )}
+              </section>
             </section>
           </Portal>
         )}

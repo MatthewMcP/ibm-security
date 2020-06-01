@@ -135,6 +135,23 @@ describe('PanelV2', () => {
     expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
 
+  test('should invoke close mock when non-panel content is clicked', () => {
+    const onCloseMock = jest.fn();
+    const { getByText } = render(
+      <div>
+        <span>Outside panel text</span>
+        <PanelV2
+          closeButton={{
+            onClick: onCloseMock,
+          }}
+        />
+      </div>
+    );
+
+    userEvent.click(getByText(/Outside panel text/i));
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
+
   test('should not render panel when `isOpen` is set to `false`', () => {
     const { queryByText } = render(
       <PanelV2
